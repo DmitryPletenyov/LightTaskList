@@ -1,0 +1,113 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Task List</h1>
+
+    <button type="button" class="btn btn-outline-primary mb-1" id="btn_add">Add task</button>
+
+    <div class="progress mb-1" id="prDiv">
+        <div id="pr" class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+    </div>
+
+    <div id="tasks">
+        <div class="input-group input-group-lg mb-1" id="taskRow1">
+            <div class="input-group-prepend">
+                <div class="input-group-text form-check">
+                    <label><input type="checkbox" onclick="saveToLS(); UpdateProgres();"><span class="label-text"></span></label>
+                </div>
+                <button class="btn btn-outline-secondary" type="button" id="button-addon1" onclick="remove('#taskRow1')">Delete</button>
+            </div>
+            <input type="text" class="form-control" placeholder="Enter your task" aria-label="" aria-describedby="button-addon1" onchange="saveToLS()">
+        </div>
+
+    </div>
+
+</div>
+
+@section scripts {
+    <script type="text/javascript">
+        var index = 1;
+        var useLocalStorage = (typeof (Storage) !== "undefined");
+        loadFromLS();
+
+        function getNewTask(index, b, t) {
+            return `<div class="input-group input-group-lg mb-1" id="taskRow${index}">
+                        <div class='input-group-prepend'>
+                            <div class="input-group-text">
+                                <label><input type="checkbox" aria-label="" onclick="saveToLS(); UpdateProgres();" ${ isEmpty(b) ? "" : "checked"}><span class="label-text"></span></label>
+                            </div>
+                            <button class="btn btn-outline-secondary" type="button" id="button-addon${index}" onclick="remove('#taskRow${index}')">Delete</button>
+                        </div>
+                        <input type="text" class="form-control" placeholder="" aria-label="" aria-describedby="button-addon${index}" value="${isEmpty(t) ? "" : t}" onchange="saveToLS()">
+                    </div>`
+        }
+
+        $('#btn_add').on('click', function (e) {
+            index++;
+            $("#tasks").append(getNewTask(index, null, null));
+            UpdateProgres();
+            saveToLS();
+        })
+
+        function UpdateProgres() {
+            var totalCnt = $('input:checkbox').length;
+            var checkedCnt = $('input[type=checkbox]:checked').length;
+            if (totalCnt > 0) {
+                $('#prDiv').show();
+                var percent = checkedCnt / totalCnt * 100;
+                $('#pr').attr('aria-valuenow', percent);
+                $('#pr').attr('style', `width: ${percent}%`);
+            }
+            else {
+                $('#prDiv').hide();
+            }
+        }
+
+        function remove(arg) {
+            $(arg).remove();
+            UpdateProgres();
+            saveToLS();
+        }
+
+        function saveToLS() {
+            let items = [];
+            $("div[id^='taskRow']").each(function (index, element) {
+                const item = {
+                    b: $(element).find('input:checkbox').is(':checked'),
+                    t: $(element).children('input:text').val()
+                }
+                items.push(item);
+            });
+
+            window.localStorage.setItem('taskList', JSON.stringify(items));
+        }
+
+        function loadFromLS() {
+            if (!useLocalStorage) { return false;}
+            var ls = window.localStorage.getItem('taskList');
+            if (ls) {
+                try {
+                    var arr = JSON.parse(ls);
+                    $('#tasks').empty();
+                    index = 0;
+                    for (i of arr) {
+                        index++;
+                        console.log(`i.b ${i.b}, i.t ${i.t}`);
+                        $("#tasks").append(getNewTask(index, i.b, i.t));
+                    }
+                    UpdateProgres();
+                } catch (e) {
+                    return false;
+                }
+
+            }
+        }
+
+        function isEmpty(str) {
+            return (!str || 0 === str.length);
+        }
+
+    </script>
+}
